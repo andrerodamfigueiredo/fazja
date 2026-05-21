@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#00C6FF">
+<title>Faz Já ⚡</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+:root {
+  --bg:       #0A0A0B;
+  --card:     #1C1C1E;
+  --card2:    #252528;
+  --manha:    #FFB800;
+  --tarde:    #00C6FF;
+  --green:    #1DB954;
+  --red:      #FF3B3B;
+  --amber:    #FF9F0A;
+  --text:     #FFFFFF;
+  --text2:    #8E8E93;
+  --border:   #2C2C2E;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body { height:100%; overflow:hidden; background:var(--bg); }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* ── STREAK BAR ── */
+#streak-bar {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  z-index: 10;
+}
+#streak-text { font-size: 15px; font-weight: 600; }
+#streak-detail { font-size: 12px; color: var(--text2); }
+.streak-glow { animation: streakGlow 2s ease infinite; }
+@keyframes streakGlow {
+  0%,100% { text-shadow: 0 0 8px #FFB800; }
+  50%      { text-shadow: 0 0 20px #FF6B00, 0 0 40px #FFB800; }
+}
+
+/* ── STREAK RISK BANNER ── */
+#streak-risk {
+  display: none;
+  background: linear-gradient(90deg, #FF9F0A22, #FF9F0A44);
+  border-bottom: 1px solid #FF9F0A66;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #FF9F0A;
+  text-align: center;
+  animation: riskPulse 2s ease infinite;
+}
+#streak-risk.show { display: block; }
+@keyframes riskPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+/* ── MAIN SCROLL AREA ── */
+#main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 14px 100px;
+}
+
+/* ── SLOT HEADERS ── */
+.slot-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 10px;
+  padding: 0 2px;
+}
+.slot-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.slot-manha h2 { color: var(--manha); }
+.slot-tarde  h2 { color: var(--tarde); }
+.slot-count {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--border);
+  color: var(--text2);
+}
+
+/* ── TASK LIST ── */
+.task-list {
+  min-height: 56px;
+  transition: background 0.2s;
+}
+.task-list.drag-over {
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+}
+.task-list.empty-slot {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text2);
+  font-size: 13px;
+  padding: 18px;
+}
+
+/* ── TASK CARD ── */
+.task-card {
+  background: var(--card);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  padding: 14px 10px 14px 16px;
+  margin-bottom: 8px;
+  border-left: 4px solid var(--border);
+  gap: 12px;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+}
+.task-card.urgency-overdue { border-left-color: var(--red); }
+.task-card.urgency-today   { border-left-color: var(--amber); }
+.task-card.dnd-placeholder {
+  opacity: 0.25;
+  transform: scale(0.97);
+}
+
+.task-emoji { font-size: 34px; flex-shrink: 0; line-height: 1; }
+
+.task-body { flex: 1; min-width: 0; }
+.task-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-time {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+.done-btn {
+  flex-shrink: 0;
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.1s, background 0.15s;
+}
+.done-btn:active { transform: scale(0.93); }
+
+.drag-handle {
+  flex-shrink: 0;
+  color: var(--text2);
+  font-size: 22px;
+  padding: 10px 8px;
+  cursor: grab;
+  touch-action: none;
+  line-height: 1;
+  opacity: 0.5;
+}
+
+/* ── DROP INDICATOR ── */
+.drop-indicator {
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, var(--tarde) 30%, var(--tarde) 70%, transparent 100%);
+  border-radius: 2px;
+  margin: 2px 8px;
+  animation: indicatorGlow 0.6s ease infinite alternate;
+}
+@keyframes indicatorGlow { from{opacity:0.7} to{opacity:1} }
+
+/* ── DONE SECTION ── */
+#done-section { margin-top: 20px; }
+#done-toggle {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 16px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#done-list { margin-top: 8px; display: none; }
+#done-list.open { display: block; }
+
+.task-card.done-card {
+  opacity: 0.5;
+  border-left-color: var(--border);
+}
+.task-card.done-card .task-title {
+  text-decoration: line-through;
+  color: var(--text2);
+}
+
+/* ── MIC BUTTON ── */
+#mic-btn {
+  position: fixed;
+  bottom: max(24px, env(safe-area-inset-bottom, 24px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--tarde);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  box-shadow: 0 4px 24px rgba(0,198,255,0.5);
+  z-index: 100;
+  transition: transform 0.15s, box-shadow 0.15s;
+  animation: micPulse 3s ease infinite;
+}
+@keyframes micPulse {
+  0%,100% { box-shadow: 0 4px 24px rgba(0,198,255,0.5); }
+  50%      { box-shadow: 0 4px 36px rgba(0,198,255,0.8); }
+}
+#mic-btn.recording {
+  background: var(--red);
+  animation: micRecord 0.8s ease infinite;
+}
+@keyframes micRecord {
+  0%,100% { transform: translateX(-50%) scale(1);    box-shadow: 0 4px 24px rgba(255,59,59,0.6); }
+  50%      { transform: translateX(-50%) scale(1.08); box-shadow: 0 4px 48px rgba(255,59,59,0.9); }
+}
+#mic-btn:active { transform: translateX(-50%) scale(0.92); }
+
+/* ── LIVE TRANSCRIPT PILL ── */
+#transcript-pill {
+  position: fixed;
+  bottom: 108px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(28,28,30,0.96);
+  border: 1px solid var(--tarde);
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: var(--text);
+  max-width: 90vw;
+  text-align: center;
+  display: none;
+  z-index: 100;
+  backdrop-filter: blur(16px);
+  animation: pillIn 0.2s ease;
+}
+@keyframes pillIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+#transcript-pill.show { display: block; }
+
+/* ── VOICE MODAL (preview) ── */
+#voice-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  padding: 16px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+}
+#voice-modal.show { display: flex; }
+
+.preview-card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 24px 20px 20px;
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes slideUp { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+.preview-emoji { font-size: 56px; text-align: center; margin-bottom: 10px; }
+.preview-title {
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.preview-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 12px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: center;
+}
+.slot-badge-manha { background: rgba(255,184,0,0.15); color: var(--manha); border: 1px solid var(--manha)44; }
+.slot-badge-tarde  { background: rgba(0,198,255,0.15); color: var(--tarde); border: 1px solid var(--tarde)44; }
+
+.preview-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.btn-save {
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-retry {
+  background: var(--border);
+  color: var(--text2);
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── TEXT FALLBACK INPUT ── */
+#text-input-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  padding: 16px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+}
+#text-input-modal.show { display: flex; }
+.text-input-card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 20px;
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp 0.3s ease;
+}
+.text-input-card h3 { font-size: 18px; margin-bottom: 14px; }
+#task-text-input {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+  outline: none;
+}
+#task-text-input:focus { border-color: var(--tarde); }
+
+/* ── CELEBRATION OVERLAY ── */
+#celebration {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 9999;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#celebration.show { display: flex; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.cel-emoji   { font-size: 90px; animation: bounceIn 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+.cel-message { font-size: 30px; font-weight: 800; margin-top: 16px; animation: bounceIn 0.6s 0.1s both cubic-bezier(0.34,1.56,0.64,1); }
+.cel-sub     { font-size: 18px; color: var(--text2); margin-top: 8px; animation: bounceIn 0.6s 0.2s both; }
+@keyframes bounceIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+.confetti-piece {
+  position: fixed;
+  width: 10px;
+  height: 14px;
+  animation: fall 2.5s ease-in forwards;
+  border-radius: 2px;
+}
+@keyframes fall {
+  0%   { top: -20px; opacity: 1; transform: rotate(0deg) translateX(0); }
+  100% { top: 110vh; opacity: 0; transform: rotate(540deg) translateX(40px); }
+}
+
+/* ── NOTIFICATION PROMPT ── */
+#notif-prompt {
+  margin: 8px 0;
+  background: rgba(0,198,255,0.08);
+  border: 1px solid rgba(0,198,255,0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  display: none;
+}
+#notif-prompt.show { display: flex; }
+#notif-prompt span { flex:1; font-size: 13px; color: var(--text2); }
+#notif-allow-btn {
+  background: var(--tarde);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── CARD DONE FLASH ── */
+@keyframes flashGreen {
+  0%  { background: var(--card); }
+  30% { background: rgba(29,185,84,0.35); }
+  100%{ background: var(--card); }
+}
+.flash-done { animation: flashGreen 0.6s ease forwards; }
+
+/* ── DND GHOST ── */
+#dnd-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  transform: rotate(2deg) scale(1.03);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+  transition: none !important;
+}
+</style>
+</head>
+<body>
+
+<!-- STREAK BAR -->
+<div id="streak-bar">
+  <span id="streak-text">Começa hoje! 💪</span>
+  <span id="streak-detail"></span>
+</div>
+<div id="streak-risk">⚠️ Não percas o teu streak! Completa uma tarefa.</div>
+
+<!-- MAIN SCROLLABLE -->
+<div id="main">
+  <div id="notif-prompt">
+    <span>🔔 Para lembretes, preciso de permissão</span>
+    <button id="notif-allow-btn">Activar</button>
+  </div>
+
+  <!-- MANHÃ -->
+  <div class="slot slot-manha" data-slot="manha">
+    <div class="slot-header">
+      <h2>🌅 MANHÃ</h2>
+      <span class="slot-count" id="count-manha">0</span>
+    </div>
+    <div class="task-list" id="list-manha" data-slot="manha"></div>
+  </div>
+
+  <!-- TARDE -->
+  <div class="slot slot-tarde" data-slot="tarde">
+    <div class="slot-header">
+      <h2>🌆 TARDE</h2>
+      <span class="slot-count" id="count-tarde">0</span>
+    </div>
+    <div class="task-list" id="list-tarde" data-slot="tarde"></div>
+  </div>
+
+  <!-- CONCLUÍDAS -->
+  <div id="done-section">
+    <button id="done-toggle">✅ Concluídas hoje (<span id="done-count">0</span>)</button>
+    <div id="done-list"></div>
+  </div>
+</div>
+
+<!-- MIC BUTTON -->
+<button id="mic-btn" title="Falar tarefa">🎤</button>
+
+<!-- TRANSCRIPT PILL -->
+<div id="transcript-pill"></div>
+
+<!-- VOICE PREVIEW MODAL -->
+<div id="voice-modal">
+  <div class="preview-card">
+    <div id="preview-emoji" class="preview-emoji">⭐</div>
+    <div id="preview-title" class="preview-title">A processar...</div>
+    <div id="preview-slot" class="preview-slot slot-badge-manha">🌅 MANHÃ</div>
+    <div class="preview-actions">
+      <button class="btn-save" onclick="saveTask()">✓ Guardar</button>
+      <button class="btn-retry" onclick="retryVoice()">🔄 Repetir</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEXT INPUT FALLBACK -->
+<div id="text-input-modal">
+  <div class="text-input-card">
+    <h3>✍️ Escreve a tarefa</h3>
+    <input id="task-text-input" type="text" placeholder="Ex: Ligar ao cliente João" autocomplete="off">
+    <div class="preview-actions">
+      <button class="btn-save" onclick="submitTextTask()">✓ Adicionar</button>
+      <button class="btn-retry" onclick="closeTextInput()">✕ Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CELEBRATION -->
+<div id="celebration">
+  <div class="cel-emoji"  id="cel-emoji">✅</div>
+  <div class="cel-message" id="cel-msg">Primeiro do dia!</div>
+  <div class="cel-sub"    id="cel-sub">🔥 Streak activo!</div>
+  <div id="confetti-container"></div>
+</div>
+
+<script>
+'use strict';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let tasks      = [];
+let streak     = {};
+let vapidKey   = null;
+let parsedTask = null;   // pending preview task
+let recognition = null;
+let isRecording = false;
+let audioCtx    = null;
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  registerSW();
+  await loadData();
+  initVoice();
+  initDnD();
+  initDoneToggle();
+  checkStreakRisk();
+  checkPrefillFromURL();
+  setInterval(checkStreakRisk, 60000);
+
+  // Handle SW messages (mark done from notification)
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data?.type === 'RELOAD') loadData();
+    });
+  }
+});
+
+// ── Service Worker ─────────────────────────────────────────────────────────────
+function registerSW() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(e => console.warn('SW:', e));
+  }
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch('/api/tasks');
+    const data = await res.json();
+    tasks    = data.tasks;
+    streak   = data.streak;
+    vapidKey = data.vapidPublicKey;
+    render();
+    maybePromptNotifications();
+  } catch (e) {
+    console.error('loadData:', e);
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  renderStreak();
+  renderSlot('manha');
+  renderSlot('tarde');
+  renderDone();
+}
+
+function renderStreak() {
+  const n    = streak.current_streak || 0;
+  const el   = document.getElementById('streak-text');
+  const det  = document.getElementById('streak-detail');
+  let text, cls = '';
+
+  if      (n === 0) text = 'Começa hoje! 💪';
+  else if (n <= 2)  text = `🔥 ${n} dia${n>1?'s':''} — continua!`;
+  else if (n <= 6)  text = `🔥 ${n} dias — estás a arrasar!`;
+  else if (n <= 13) text = `🔥 ${n} dias — imparável!`;
+  else              { text = `🔥 ${n} dias — LENDÁRIO! 🏆`; cls = 'streak-glow'; }
+
+  el.textContent = text;
+  el.className   = cls;
+  det.textContent = streak.total_tasks_done ? `${streak.total_tasks_done} tarefas no total` : '';
+}
+
+function renderSlot(slot) {
+  const list  = document.getElementById('list-' + slot);
+  const count = document.getElementById('count-' + slot);
+  const slotTasks = tasks.filter(t => t.slot === slot && !t.done);
+
+  count.textContent = slotTasks.length;
+
+  if (slotTasks.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:18px;color:var(--text2);font-size:13px">Arrasta tarefas para aqui</div>';
+    return;
+  }
+
+  list.innerHTML = slotTasks
+    .sort((a, b) => a.position - b.position)
+    .map(t => cardHTML(t))
+    .join('');
+
+  // Re-attach touch listeners
+  list.querySelectorAll('.drag-handle').forEach(h => {
+    attachDragHandle(h);
+  });
+}
+
+function renderDone() {
+  const today = new Date().toISOString().slice(0, 10);
+  const doneTasks = tasks.filter(t => t.done && t.done_at?.startsWith(today));
+  document.getElementById('done-count').textContent = doneTasks.length;
+  const list = document.getElementById('done-list');
+  list.innerHTML = doneTasks
+    .sort((a, b) => b.done_at?.localeCompare(a.done_at))
+    .map(t => `
+      <div class="task-card done-card">
+        <div class="task-emoji">${t.emoji}</div>
+        <div class="task-body"><div class="task-title">${escHtml(t.title)}</div></div>
+        <button style="background:none;border:none;color:var(--text2);font-size:22px;padding:6px;cursor:pointer"
+          onclick="deleteTask(${t.id})" title="Apagar">🗑</button>
+      </div>`).join('');
+}
+
+function cardHTML(t) {
+  const urgency = getUrgency(t);
+  const timeStr = t.due_at ? formatTime(t.due_at) : '';
+  return `
+    <div class="task-card urgency-${urgency}" data-id="${t.id}" data-slot="${t.slot}">
+      <div class="task-emoji">${t.emoji}</div>
+      <div class="task-body">
+        <div class="task-title">${escHtml(t.title)}</div>
+        ${timeStr ? `<div class="task-time">⏰ ${timeStr}</div>` : ''}
+      </div>
+      <button class="done-btn" onclick="markDone(${t.id})">✓ FEITO</button>
+      <div class="drag-handle" data-id="${t.id}">☰</div>
+    </div>`;
+}
+
+function getUrgency(t) {
+  if (!t.due_at) return 'none';
+  const diff = (new Date(t.due_at) - new Date()) / 60000;
+  if (diff < 0)  return 'overdue';
+  if (diff < 240) return 'today';
+  return 'none';
+}
+
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Mark Done ─────────────────────────────────────────────────────────────────
+async function markDone(id) {
+  // Flash the card green
+  const card = document.querySelector(`.task-card[data-id="${id}"]`);
+  if (card) card.classList.add('flash-done');
+
+  playDing();
+
+  const res = await fetch(`/api/tasks/${id}/done`, { method: 'PUT' });
+  const data = await res.json();
+
+  streak = data.streak;
+  tasks  = tasks.map(t => t.id === id ? data.task : t);
+
+  showCelebration(data.streak);
+  render();
+}
+
+async function deleteTask(id) {
+  await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+  tasks = tasks.filter(t => t.id !== id);
+  render();
+}
+
+// ── Celebration ───────────────────────────────────────────────────────────────
+function showCelebration(s) {
+  const n = s.current_streak || 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const isFirst = s.last_active_date === today && s.total_tasks_done > 0;
+  if (!isFirst) return;
+
+  const cel = document.getElementById('celebration');
+  const confetti = document.getElementById('confetti-container');
+  confetti.innerHTML = '';
+
+  let emoji, msg, sub;
+  if      (n === 30) { emoji='🏆'; msg='30 DIAS! LENDÁRIO!'; sub='Estás a fazer história!'; spawnConfetti(); }
+  else if (n === 7)  { emoji='🏆'; msg='UMA SEMANA!'; sub='Hábito criado. Imparável! 🔥'; spawnConfetti(); }
+  else if (n === 3)  { emoji='🔥'; msg='3 dias seguidos!'; sub='Estás a criar um hábito!'; }
+  else               { emoji='✅'; msg='Streak activo!'; sub=`🔥 ${n} dia${n>1?'s':''} seguidos`; }
+
+  document.getElementById('cel-emoji').textContent = emoji;
+  document.getElementById('cel-msg').textContent   = msg;
+  document.getElementById('cel-sub').textContent   = sub;
+
+  cel.classList.add('show');
+  setTimeout(() => cel.classList.remove('show'), 3000);
+}
+
+function spawnConfetti() {
+  const colours = ['#FFB800','#00C6FF','#FF3B3B','#1DB954','#FF9F0A','#BF5AF2'];
+  const cont = document.getElementById('confetti-container');
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.cssText = `
+      left: ${Math.random()*100}vw;
+      animation-delay: ${Math.random()*2}s;
+      animation-duration: ${2 + Math.random()}s;
+      background: ${colours[Math.floor(Math.random()*colours.length)]};
+      width: ${6+Math.random()*10}px;
+      height: ${8+Math.random()*14}px;
+    `;
+    cont.appendChild(p);
+  }
+}
+
+// ── Streak Risk ───────────────────────────────────────────────────────────────
+function checkStreakRisk() {
+  const hour   = new Date().getHours();
+  const today  = new Date().toISOString().slice(0, 10);
+  const banner = document.getElementById('streak-risk');
+  const hasStreak  = (streak.current_streak || 0) > 0;
+  const nothingDone = streak.last_active_date !== today;
+  if (hour >= 18 && hasStreak && nothingDone) {
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+// ── Done Toggle ───────────────────────────────────────────────────────────────
+function initDoneToggle() {
+  document.getElementById('done-toggle').addEventListener('click', () => {
+    document.getElementById('done-list').classList.toggle('open');
+  });
+}
+
+// ── Audio ─────────────────────────────────────────────────────────────────────
+function playDing() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+    osc.type = 'sine'; osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+  } catch(e) {}
+}
+
+// ── Voice Input ───────────────────────────────────────────────────────────────
+function initVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    recognition = new SR();
+    recognition.lang = 'pt-PT';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onresult = (e) => {
+      let interim = '', final = '';
+      for (const r of e.results) {
+        if (r.isFinal) final += r[0].transcript;
+        else           interim += r[0].transcript;
+      }
+      showTranscript(final || interim);
+      if (final) submitTranscript(final);
+    };
+
+    recognition.onerror = (e) => {
+      if (e.error === 'not-allowed') {
+        alert('Microfone bloqueado. Vai às definições do Chrome e activa o microfone.');
+      }
+      stopRecording();
+    };
+
+    recognition.onend = () => stopRecording();
+
+    document.getElementById('mic-btn').addEventListener('click', toggleRecording);
+  } else {
+    // Fallback to text input
+    document.getElementById('mic-btn').textContent = '✍️';
+    document.getElementById('mic-btn').addEventListener('click', () => {
+      document.getElementById('text-input-modal').classList.add('show');
+      setTimeout(() => document.getElementById('task-text-input').focus(), 300);
+    });
+  }
+}
+
+function toggleRecording() {
+  if (isRecording) {
+    recognition.stop();
+  } else {
+    startRecording();
+  }
+}
+
+function startRecording() {
+  isRecording = true;
+  document.getElementById('mic-btn').classList.add('recording');
+  showTranscript('A ouvir...');
+  try { recognition.start(); } catch(e) { stopRecording(); }
+}
+
+function stopRecording() {
+  isRecording = false;
+  document.getElementById('mic-btn').classList.remove('recording');
+}
+
+function showTranscript(text) {
+  const pill = document.getElementById('transcript-pill');
+  pill.textContent = text;
+  pill.classList.add('show');
+}
+
+function hideTranscript() {
+  document.getElementById('transcript-pill').classList.remove('show');
+}
+
+async function submitTranscript(text) {
+  stopRecording();
+  hideTranscript();
+  showPreviewLoading();
+
+  try {
+    const res  = await fetch('/api/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript: text }),
+    });
+    parsedTask = await res.json();
+    showPreview(parsedTask);
+  } catch(e) {
+    // Fallback
+    parsedTask = { title: text, slot: 'manha', emoji: '⭐', hasTime: false, due_at: null };
+    showPreview(parsedTask);
+  }
+}
+
+// Text fallback
+function submitTextTask() {
+  const val = document.getElementById('task-text-input').value.trim();
+  if (!val) return;
+  document.getElementById('task-text-input').value = '';
+  closeTextInput();
+  submitTranscript(val);
+}
+
+function closeTextInput() {
+  document.getElementById('text-input-modal').classList.remove('show');
+}
+
+// ── Preview Modal ─────────────────────────────────────────────────────────────
+function showPreviewLoading() {
+  document.getElementById('preview-emoji').textContent = '⏳';
+  document.getElementById('preview-title').textContent = 'A processar...';
+  document.getElementById('voice-modal').classList.add('show');
+}
+
+function showPreview(task) {
+  document.getElementById('preview-emoji').textContent = task.emoji || '⭐';
+  document.getElementById('preview-title').textContent = task.title;
+
+  const slotEl = document.getElementById('preview-slot');
+  if (task.slot === 'tarde') {
+    slotEl.textContent = '🌆 TARDE';
+    slotEl.className = 'preview-slot slot-badge-tarde';
+  } else {
+    slotEl.textContent = '🌅 MANHÃ';
+    slotEl.className = 'preview-slot slot-badge-manha';
+  }
+  document.getElementById('voice-modal').classList.add('show');
+}
+
+async function saveTask() {
+  if (!parsedTask) return;
+  document.getElementById('voice-modal').classList.remove('show');
+
+  const res  = await fetch('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title:    parsedTask.title,
+      emoji:    parsedTask.emoji,
+      slot:     parsedTask.slot,
+      has_time: parsedTask.hasTime ? 1 : 0,
+      due_at:   parsedTask.due_at || null,
+    }),
+  });
+  const data = await res.json();
+  tasks.push(data.task);
+  parsedTask = null;
+  render();
+
+  // Scroll to the new task's slot
+  const slotEl = document.querySelector(`.slot-${data.task.slot}`);
+  slotEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function retryVoice() {
+  document.getElementById('voice-modal').classList.remove('show');
+  parsedTask = null;
+  if (recognition) {
+    setTimeout(startRecording, 300);
+  } else {
+    document.getElementById('text-input-modal').classList.add('show');
+  }
+}
+
+// ── Pre-fill from URL ─────────────────────────────────────────────────────────
+function checkPrefillFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const text   = params.get('prefill') || params.get('task');
+  if (text) {
+    window.history.replaceState({}, '', '/');
+    setTimeout(() => submitTranscript(text), 800);
+  }
+  if (params.get('mic') === '1') {
+    window.history.replaceState({}, '', '/');
+    setTimeout(() => recognition && startRecording(), 800);
+  }
+}
+
+// ── DRAG AND DROP (Touch + Mouse) ─────────────────────────────────────────────
+let dnd = null;
+
+function initDnD() {
+  // Also support desktop mouse drag
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+}
+
+function attachDragHandle(handle) {
+  handle.addEventListener('touchstart',  onTouchStart, { passive: false });
+  handle.addEventListener('mousedown',   onMouseDown);
+}
+
+function startDrag(e, clientX, clientY) {
+  const handle = e.currentTarget || e.target;
+  const card   = handle.closest('.task-card');
+  if (!card) return;
+
+  const rect = card.getBoundingClientRect();
+
+  // Create ghost
+  const ghost = card.cloneNode(true);
+  ghost.id = 'dnd-ghost';
+  ghost.style.cssText = `
+    position: fixed;
+    width: ${rect.width}px;
+    top: ${rect.top}px;
+    left: ${rect.left}px;
+    opacity: 0.85;
+    border-radius: 14px;
+    pointer-events: none;
+    z-index: 9998;
+    transform: rotate(2deg) scale(1.03);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+  `;
+  document.body.appendChild(ghost);
+
+  card.classList.add('dnd-placeholder');
+
+  dnd = {
+    card,
+    ghost,
+    id:      parseInt(card.dataset.id),
+    offsetX: clientX - rect.left,
+    offsetY: clientY - rect.top,
+    target:  null,
+  };
+}
+
+// ── Touch handlers ─────────────────────────────────────────────────────────────
+function onTouchStart(e) {
+  const touch = e.touches[0];
+  startDrag(e, touch.clientX, touch.clientY);
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend',  onTouchEnd);
+}
+
+function onTouchMove(e) {
+  if (!dnd) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  moveDrag(touch.clientX, touch.clientY);
+}
+
+function onTouchEnd() {
+  document.removeEventListener('touchmove', onTouchMove);
+  document.removeEventListener('touchend',  onTouchEnd);
+  endDrag();
+}
+
+// ── Mouse handlers ─────────────────────────────────────────────────────────────
+function onMouseDown(e) {
+  e.preventDefault();
+  startDrag(e, e.clientX, e.clientY);
+}
+
+function onMouseMove(e) {
+  if (!dnd) return;
+  moveDrag(e.clientX, e.clientY);
+}
+
+function onMouseUp() {
+  if (!dnd) return;
+  endDrag();
+}
+
+// ── Core DnD logic ─────────────────────────────────────────────────────────────
+function moveDrag(x, y) {
+  if (!dnd) return;
+  dnd.ghost.style.top  = (y - dnd.offsetY) + 'px';
+  dnd.ghost.style.left = (x - dnd.offsetX) + 'px';
+
+  const target = findDropTarget(x, y);
+  if (target) {
+    dnd.target = target;
+    updateIndicator(target);
+  }
+}
+
+function findDropTarget(x, y) {
+  // Ghost has pointer-events:none so elementFromPoint ignores it
+  const el   = document.elementFromPoint(x, y);
+  const slot = el?.closest('[data-slot]')?.dataset.slot;
+  if (!slot) return null;
+
+  const list  = document.getElementById('list-' + slot);
+  const cards = [...list.querySelectorAll('.task-card:not(.dnd-placeholder)')];
+  const midY  = y;
+
+  for (const c of cards) {
+    const r = c.getBoundingClientRect();
+    if (midY < r.top + r.height / 2) return { slot, beforeEl: c };
+  }
+  return { slot, beforeEl: null };
+}
+
+function updateIndicator(target) {
+  document.querySelectorAll('.drop-indicator').forEach(e => e.remove());
+  const ind = document.createElement('div');
+  ind.className = 'drop-indicator';
+  const list = document.getElementById('list-' + target.slot);
+  if (target.beforeEl) {
+    list.insertBefore(ind, target.beforeEl);
+  } else {
+    list.appendChild(ind);
+  }
+}
+
+function endDrag() {
+  if (!dnd) return;
+
+  document.querySelectorAll('.drop-indicator').forEach(e => e.remove());
+  dnd.ghost.remove();
+  dnd.card.classList.remove('dnd-placeholder');
+
+  if (dnd.target) {
+    const { slot, beforeEl } = dnd.target;
+    const list = document.getElementById('list-' + slot);
+
+    if (beforeEl) list.insertBefore(dnd.card, beforeEl);
+    else          list.appendChild(dnd.card);
+
+    dnd.card.dataset.slot = slot;
+
+    // Update local state
+    const t = tasks.find(t => t.id === dnd.id);
+    if (t) t.slot = slot;
+
+    // Save order
+    saveOrder();
+    updateCounts();
+  }
+
+  dnd = null;
+}
+
+function saveOrder() {
+  const order = {
+    manha: [...document.querySelectorAll('#list-manha .task-card')].map(c => parseInt(c.dataset.id)),
+    tarde: [...document.querySelectorAll('#list-tarde .task-card')].map(c => parseInt(c.dataset.id)),
+  };
+  fetch('/api/tasks/reorder', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order }),
+  }).catch(e => console.warn('reorder:', e));
+}
+
+function updateCounts() {
+  ['manha', 'tarde'].forEach(slot => {
+    const n = document.querySelectorAll(`#list-${slot} .task-card`).length;
+    document.getElementById('count-' + slot).textContent = n;
+  });
+}
+
+// ── Push Notifications ────────────────────────────────────────────────────────
+function maybePromptNotifications() {
+  if (!vapidKey) return;
+  if (Notification.permission === 'granted') {
+    subscribePush();
+    return;
+  }
+  if (Notification.permission === 'denied') return;
+  document.getElementById('notif-prompt').classList.add('show');
+  document.getElementById('notif-allow-btn').onclick = async () => {
+    document.getElementById('notif-prompt').classList.remove('show');
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') subscribePush();
+  };
+}
+
+async function subscribePush() {
+  if (!vapidKey || !('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(vapidKey),
+      });
+    }
+    await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: sub }),
+    });
+  } catch(e) { console.warn('push subscribe:', e); }
+}
+
+function urlB64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g,'+').replace(/_/g,'/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+</script>
+</body>
+</html>
