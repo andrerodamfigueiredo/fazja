@@ -1,0 +1,11 @@
+{
+  "name": "fazja",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node backend/server.js",
+    "install-deps": "npm install --prefix backend"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
